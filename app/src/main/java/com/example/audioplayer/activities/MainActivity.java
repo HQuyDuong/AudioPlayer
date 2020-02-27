@@ -1,11 +1,17 @@
 package com.example.audioplayer.activities;
 
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.recyclerview.widget.RecyclerView;
-
+import android.Manifest;
+import android.content.ContentResolver;
+import android.content.pm.PackageManager;
+import android.database.Cursor;
+import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
-import android.util.Log;
+import android.provider.MediaStore;
+import android.widget.LinearLayout;
+
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.audioplayer.R;
 import com.example.audioplayer.common.activities.BaseActivity;
@@ -15,7 +21,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 public class MainActivity extends BaseActivity {
+    private static final int MY_PERMISSION_REQUEST = 1;
     private RecyclerView recyclerView;
+    private LinearLayout lnrSong;
+    private LinearLayout lnrPlaylist;
+
     @Override
     public int getLayoutId() {
         return R.layout.activity_main;
@@ -24,18 +34,24 @@ public class MainActivity extends BaseActivity {
     @Override
     protected void initViews(Bundle savedInstanceState) {
         recyclerView = findViewById(R.id.main_activity_rv);
+        lnrPlaylist = findViewById(R.id.main_click_playlist_lnr);
+        lnrSong = findViewById(R.id.main_click_song_lnr);
     }
 
     @Override
     protected void initData() {
-        ArrayList<HashMap<String,String>> songList=getPlayList(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).getPath());
-        if(songList!=null){
-            for(int i=0;i<songList.size();i++){
-                String fileName=songList.get(i).get("file_name");
-                String filePath=songList.get(i).get("file_path");
-                //here you will get list of file name and file path that present in your device
-                Log.e("file details "," name ="+fileName +" path = "+filePath);
+        permissionReadStorage();
+    }
+
+    private void permissionReadStorage() {
+        if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            if (ActivityCompat.shouldShowRequestPermissionRationale(MainActivity.this, Manifest.permission.READ_EXTERNAL_STORAGE)) {
+                ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, MY_PERMISSION_REQUEST);
+            } else {
+                ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.READ_EXTERNAL_STORAGE}, MY_PERMISSION_REQUEST);
             }
+        } else {
+
         }
     }
 
@@ -44,8 +60,8 @@ public class MainActivity extends BaseActivity {
 
     }
 
-    ArrayList<HashMap<String,String>> getPlayList(String rootPath) {
-        ArrayList<HashMap<String,String>> fileList = new ArrayList<>();
+    ArrayList<HashMap<String, String>> getPlayList(String rootPath) {
+        ArrayList<HashMap<String, String>> fileList = new ArrayList<>();
 
 
         try {
@@ -58,8 +74,7 @@ public class MainActivity extends BaseActivity {
                     } else {
                         break;
                     }
-                } else
-                    if (file.getName().endsWith(".mp3")) {
+                } else if (file.getName().endsWith(".mp3")) {
                     HashMap<String, String> song = new HashMap<>();
                     song.put("file_path", file.getAbsolutePath());
                     song.put("file_name", file.getName());
@@ -69,6 +84,22 @@ public class MainActivity extends BaseActivity {
             return fileList;
         } catch (Exception e) {
             return null;
+        }
+    }
+
+    public void getMusic() {
+        ContentResolver contentResolver = getContentResolver();
+        Uri songUri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI;
+        Cursor songCursor = contentResolver.query(songUri, null, null, null, null);
+
+        if (songCursor != null && songCursor.moveToFirst()) {
+            int songTitle = songCursor.getColumnIndex(MediaStore.Audio.Media.TITLE);
+            int songArtist = songCursor.getColumnIndex(MediaStore.Audio.Media.ARTIST);
+
+            do {
+                String currentTitle = songCursor.getString(songTitle);
+                String currentArtist = songCursor.getString(songArtist);
+            } while (songCursor.moveToNext());
         }
     }
 }

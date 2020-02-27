@@ -1,4 +1,4 @@
-package com.example.audioplayer.db;
+package com.example.audioplayer.db.tables;
 
 import android.database.Cursor;
 
@@ -13,11 +13,21 @@ public interface Table<T> {
         REAL
     }
 
-    String TBL_SONGS = "tbl_songs";
+    String TBL_SONG = "tbl_song";
+    String TBL_PLAYLIST = "tbl_playlist";
+
+    long insert(T obj);
+
+    T get(String id);
+
+    List<T> findAll();
+
+    T extract(Cursor cursor);
+
+    boolean delete(long id);
+    boolean delete(String id);
 
     boolean update(T obj);
-    long insert(T obj);
-    boolean delete(String id);
-    T get(String id);
-    List<T> findAll();
+
+    void clear();
 }

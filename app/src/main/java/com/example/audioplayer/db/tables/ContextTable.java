@@ -1,21 +1,26 @@
-package com.example.audioplayer.db;
+package com.example.audioplayer.db.tables;
 
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 
+import com.example.audioplayer.db.DatabaseHelper;
+
 import java.util.ArrayList;
 import java.util.List;
 
 public abstract class ContextTable<T> implements Table<T> {
     protected Context context;
+
     public ContextTable(Context context) {
         this.context = context;
     }
+
     protected SQLiteDatabase getDatabase() {
         return DatabaseHelper.getInstance(context).getDatabase();
     }
+
     @Override
     public long insert(T obj) {
         ContentValues contentValues = convert(obj);
@@ -27,7 +32,7 @@ public abstract class ContextTable<T> implements Table<T> {
 
     @Override
     public T get(String id) {
-        if(id == null){
+        if (id == null) {
             return null;
         }
         String groupBy = null;
@@ -54,6 +59,7 @@ public abstract class ContextTable<T> implements Table<T> {
         }
         return obj;
     }
+
     @Override
     public List<T> findAll() {
         Cursor cursor = getDatabase().rawQuery("select * from " + getName(), null);
@@ -75,6 +81,12 @@ public abstract class ContextTable<T> implements Table<T> {
 
         return result;
     }
+
+    @Override
+    public boolean delete(long id) {
+        return delete(String.valueOf(id));
+    }
+
     @Override
     public boolean delete(String id) {
         String whereClause = String.format("%s=?", getPrimaryColumn());
@@ -84,6 +96,7 @@ public abstract class ContextTable<T> implements Table<T> {
         int numOfDeletedRow = getDatabase().delete(getName(), whereClause, whereArgs);
         return numOfDeletedRow > 0;
     }
+
     @Override
     public boolean update(T obj) {
         String whereClause = String.format("%s=?", getPrimaryColumn());
@@ -96,12 +109,20 @@ public abstract class ContextTable<T> implements Table<T> {
         return numOfUpdatedRow > 0;
     }
 
+    @Override
+    public void clear() {
+        getDatabase().delete(getName(), null, null);
+    }
+
+    protected abstract ContentValues convert(T obj);
+
+    protected abstract String getName();
+
+    protected abstract String getPrimaryColumn();
+
+    protected abstract int getKey(T object);
+
     protected boolean isAutoincrement() {
         return true;
     }
-    protected abstract String getKey(T object);
-    protected abstract String getPrimaryColumn();
-    protected abstract ContentValues convert(T obj);
-    protected abstract String getName();
-    protected abstract T extract(Cursor cursor);
 }
